@@ -56,4 +56,5 @@ __pycache__/
 /android/app/build/
 /build/
 .gradle/
+build_log*.txt
 
