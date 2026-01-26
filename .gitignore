@@ -49,4 +49,11 @@ app.*.map.json
 *.pyc
 __pycache__/
 .venv/
-.env
+
+# Android/Gradle
+/android/.gradle/
+/android/build/
+/android/app/build/
+/build/
+.gradle/
+
