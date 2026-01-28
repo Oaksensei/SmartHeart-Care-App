@@ -54,8 +54,6 @@ The ECG device provides raw ECG signals to the mobile application, where the dat
 
 Verify Flutter installation:
 ```bash
-flutter doctor
-
 Step 1: Clone the Repository
 git clone https://github.com/<your-username>/SmartHeart-Care-App.git
 cd SmartHeart-Care-App
