@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../routes/app_routes.dart';
-
-import '../models/user_model.dart';
-import '../services/storage_service.dart';
-import '../utils/mock_data.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,20 +29,20 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Attempt Login via StorageService
-    final user = await StorageService.loginUser(phone);
+    // Attempt Login via AuthProvider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.login(phone, password);
 
-    if (user != null) {
+    if (!mounted) return;
+
+    if (success) {
       // Success
-      AppMockState.activeUser = user;
-      if (!mounted) return;
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     } else {
       // Failed
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User not found. Please register first.'),
+        SnackBar(
+          content: Text(authProvider.error ?? 'Login failed'),
           backgroundColor: Colors.red,
         ),
       );

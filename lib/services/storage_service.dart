@@ -8,7 +8,6 @@ import '../models/user_model.dart';
 
 class StorageService {
   static const String _userKeyPrefix = 'user_';
-  static const String _activeUserKey = 'active_user_phone';
 
   // --- User Management (Shared Preferences) ---
 
@@ -20,12 +19,16 @@ class StorageService {
     await prefs.setString(_userKeyPrefix + user.phone, userJson);
   }
 
-  /// Login user by phone number. Returns User if found.
-  static Future<User?> loginUser(String phone) async {
+  /// Login user by phone number and password. Returns User if found and password matches.
+  static Future<User?> loginUser(String phone, String password) async {
     final prefs = await SharedPreferences.getInstance();
     final userString = prefs.getString(_userKeyPrefix + phone);
     if (userString != null) {
-      return User.fromJson(jsonDecode(userString));
+      final user = User.fromJson(jsonDecode(userString));
+      // Verify password
+      if (user.password == password) {
+        return user;
+      }
     }
     return null;
   }

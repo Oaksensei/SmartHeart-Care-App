@@ -349,7 +349,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Replaced Container with new Widget
+            // Playback widget with time scrubbing
             _ECGPlaybackWidget(
               ecgData: session.ecgSamples,
               samplingRate: session.samplingRate,

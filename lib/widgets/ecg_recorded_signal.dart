@@ -1,82 +1,83 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 
-class AnimatedECG extends StatefulWidget {
-  final bool isRunning;
-  final Stream<int>? dataStream; // Receiving external stream
+/// Simple ECG Recorded Signal Display
+/// Matches the style of live monitoring display for consistency
+class RecordedECGSignal extends StatelessWidget {
+  final List<int> ecgData;
+  final int samplingRate;
 
-  const AnimatedECG({super.key, required this.isRunning, this.dataStream});
-
-  @override
-  State<AnimatedECG> createState() => _AnimatedECGState();
-}
-
-class _AnimatedECGState extends State<AnimatedECG> {
-  final List<double> _points = [];
-  StreamSubscription<int>? _subscription;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.dataStream != null) {
-      _subscribeToStream();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant AnimatedECG oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    // Re-subscribe if stream changes
-    if (widget.dataStream != oldWidget.dataStream) {
-      _subscription?.cancel();
-      if (widget.dataStream != null) {
-        _subscribeToStream();
-      }
-    }
-  }
-
-  void _subscribeToStream() {
-    _subscription = widget.dataStream!.listen((data) {
-      if (!widget.isRunning) return; // ignore data if stopped
-
-      if (_points.length > 150) {
-        // Increase buffer size for longer trace if needed, keeping 150 as original
-        _points.removeAt(0);
-      }
-
-      // Scaling: Medical-standard ECG (±2000 µV)
-      // Original simple scaling: data / 50.0 (commented out for revert if needed)
-      // double value = data / 50.0;
-
-      // Medical standard: matches recorded signal playback display
-      double value = data / 35.0;
-
-      _points.add(value);
-
-      // Force repaint
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
-  }
+  const RecordedECGSignal({
+    super.key,
+    required this.ecgData,
+    required this.samplingRate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: CustomPaint(painter: _ECGPainter(_points), size: Size.infinite),
+    if (ecgData.isEmpty) {
+      return Container(
+        height: 240,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.signal_cellular_off, color: Colors.grey, size: 48),
+              SizedBox(height: 16),
+              Text(
+                "No recorded ECG available",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Downsample to ~150 points for smooth display (same as live monitoring)
+    final List<double> displayPoints = _downsampleSignal(ecgData, 150);
+
+    return Container(
+      height: 280,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: CustomPaint(
+          painter: _RecordedECGPainter(displayPoints),
+          size: Size.infinite,
+        ),
+      ),
     );
+  }
+
+  /// Downsample ECG data to a manageable number of points
+  List<double> _downsampleSignal(List<int> rawData, int targetPoints) {
+    if (rawData.length <= targetPoints) {
+      // If data is already small, just scale it
+      return rawData.map((e) => e / 50.0).toList();
+    }
+
+    final int step = (rawData.length / targetPoints).ceil();
+    final List<double> downsampled = [];
+
+    for (int i = 0; i < rawData.length; i += step) {
+      downsampled.add(rawData[i] / 50.0);
+    }
+
+    return downsampled;
   }
 }
 
-class _ECGPainter extends CustomPainter {
+class _RecordedECGPainter extends CustomPainter {
   final List<double> points;
 
-  _ECGPainter(this.points);
+  _RecordedECGPainter(this.points);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -139,14 +140,16 @@ class _ECGPainter extends CustomPainter {
 
     final waveformPaint = Paint()
       ..color = Colors
-          .cyanAccent // Bright cyan for better visibility
+          .cyanAccent // Bright cyan for visibility
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
     final path = Path();
-    final stepX = size.width / 150;
+
+    // Fit entire signal across width
+    final stepX = size.width / points.length;
 
     for (int i = 0; i < points.length; i++) {
       final x = i * stepX;

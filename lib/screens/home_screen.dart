@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../routes/app_routes.dart';
 import '../widgets/bottom_nav.dart';
-import '../utils/mock_data.dart';
+import '../providers/auth_provider.dart';
+import '../providers/bluetooth_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final connectedDevice = AppMockState.connectedDevice;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('SmartHeart Care'),
@@ -17,9 +17,12 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              // reset state ตอน logout (optional แต่ดูโปร)
-              AppMockState.connectedDevice = null;
-              AppMockState.isMonitoring = false;
+              // Logout via providers
+              Provider.of<AuthProvider>(context, listen: false).logout();
+              Provider.of<BluetoothProvider>(
+                context,
+                listen: false,
+              ).disconnect();
 
               Navigator.pushReplacementNamed(context, AppRoutes.login);
             },
@@ -29,148 +32,156 @@ class HomeScreen extends StatelessWidget {
 
       bottomNavigationBar: const BottomNav(currentIndex: 0),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Status Card
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: connectedDevice == null
-                    ? Colors.red.shade50
-                    : Colors.green.shade50,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: connectedDevice == null
-                      ? Colors.red.shade100
-                      : Colors.green.shade200,
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
+      body: Consumer<BluetoothProvider>(
+        builder: (context, bluetoothProvider, child) {
+          final connectedDevice = bluetoothProvider.connectedDevice;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Status Card
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
                     color: connectedDevice == null
-                        ? Colors.red.shade100.withOpacity(0.5)
-                        : Colors.green.shade100.withOpacity(0.5),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Device Status:',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                        ? Colors.red.shade50
+                        : Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
                       color: connectedDevice == null
-                          ? Colors.red.shade300
-                          : Colors.green.shade700,
+                          ? Colors.red.shade100
+                          : Colors.green.shade200,
+                      width: 1,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          connectedDevice == null
-                              ? Icons.link_off
-                              : Icons.check_circle_outline,
-                          color: connectedDevice == null
-                              ? Colors.red
-                              : Colors.green,
-                          size: 32,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              connectedDevice == null
-                                  ? 'Not Connected'
-                                  : 'Device Connected',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: connectedDevice == null
-                                    ? Colors.red.shade800
-                                    : Colors.green.shade800,
-                              ),
-                            ),
-                            if (connectedDevice != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                connectedDevice,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.green.shade700,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: connectedDevice == null
+                            ? Colors.red.shade100.withOpacity(0.5)
+                            : Colors.green.shade100.withOpacity(0.5),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Menu Options (Big Cards)
-            _buildBigMenuCard(
-              context,
-              title: 'Connect Device',
-              subtitle: 'Scan and pair Bluetooth',
-              icon: Icons.bluetooth_searching,
-              color: Colors.blue,
-              onTap: () => Navigator.pushNamed(context, AppRoutes.bluetooth),
-            ),
-            const SizedBox(height: 20),
-            _buildBigMenuCard(
-              context,
-              title: 'Start ECG',
-              subtitle: 'Measure your heart',
-              icon: Icons.monitor_heart,
-              color: connectedDevice == null ? Colors.grey : Colors.red,
-              isLocked: connectedDevice == null,
-              onTap: connectedDevice == null
-                  ? () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please connect device first'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Device Status:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: connectedDevice == null
+                              ? Colors.red.shade300
+                              : Colors.green.shade700,
+                        ),
                       ),
-                    )
-                  : () => Navigator.pushNamed(context, AppRoutes.monitoring),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              connectedDevice == null
+                                  ? Icons.link_off
+                                  : Icons.check_circle_outline,
+                              color: connectedDevice == null
+                                  ? Colors.red
+                                  : Colors.green,
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  connectedDevice == null
+                                      ? 'Not Connected'
+                                      : 'Device Connected',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: connectedDevice == null
+                                        ? Colors.red.shade800
+                                        : Colors.green.shade800,
+                                  ),
+                                ),
+                                if (connectedDevice != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    connectedDevice,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.green.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Menu Options (Big Cards)
+                _buildBigMenuCard(
+                  context,
+                  title: 'Connect Device',
+                  subtitle: 'Scan and pair Bluetooth',
+                  icon: Icons.bluetooth_searching,
+                  color: Colors.blue,
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.bluetooth),
+                ),
+                const SizedBox(height: 20),
+                _buildBigMenuCard(
+                  context,
+                  title: 'Start ECG',
+                  subtitle: 'Measure your heart',
+                  icon: Icons.monitor_heart,
+                  color: connectedDevice == null ? Colors.grey : Colors.red,
+                  isLocked: connectedDevice == null,
+                  onTap: connectedDevice == null
+                      ? () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please connect device first'),
+                          ),
+                        )
+                      : () =>
+                            Navigator.pushNamed(context, AppRoutes.monitoring),
+                ),
+                const SizedBox(height: 20),
+                _buildBigMenuCard(
+                  context,
+                  title: 'View History',
+                  subtitle: 'Check previous results',
+                  icon: Icons.history,
+                  color: Colors.orange,
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.history),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            _buildBigMenuCard(
-              context,
-              title: 'View History',
-              subtitle: 'Check previous results',
-              icon: Icons.history,
-              color: Colors.orange,
-              onTap: () => Navigator.pushNamed(context, AppRoutes.history),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

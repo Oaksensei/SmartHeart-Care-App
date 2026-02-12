@@ -4,6 +4,7 @@ class User {
   final String age;
   final String phone;
   final String email;
+  final String password;
 
   User({
     required this.id,
@@ -11,6 +12,7 @@ class User {
     required this.age,
     required this.phone,
     required this.email,
+    required this.password,
   });
 
   Map<String, dynamic> toJson() => {
@@ -19,6 +21,7 @@ class User {
     'age': age,
     'phone': phone,
     'email': email,
+    'password': password,
   };
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -28,6 +31,7 @@ class User {
       age: json['age'] as String,
       phone: json['phone'] as String,
       email: (json['email'] as String?) ?? "",
+      password: (json['password'] as String?) ?? "",
     );
   }
 }

@@ -7,7 +7,6 @@ import '../screens/bluetooth_screen.dart';
 import '../screens/monitoring_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/session_detail_screen.dart';
-import '../screens/session_detail_screen.dart';
 import '../screens/register_screen.dart';
 import '../screens/settings_screen.dart';
 
