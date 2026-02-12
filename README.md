@@ -74,3 +74,31 @@ Step 5: Start ECG Measurement
 Open the application.
 Start a new ECG recording session.
 View real-time ECG signal and signal quality status.
+
+---
+
+## Version Control Workflow
+
+### Daily flow (simple)
+```bash
+git status
+git checkout -b feature/short-name
+# work...
+git add -A
+git commit -m "describe change"
+git checkout main
+git merge feature/short-name
+git push origin main
+```
+
+### Versioning (Semantic Versioning)
+- Update version in `pubspec.yaml` (format `MAJOR.MINOR.PATCH+BUILD`)
+- Tag releases when ready:
+```bash
+git tag -a v1.0.0 -m "release v1.0.0"
+git push origin v1.0.0
+```
+
+### Changelog
+- Add changes under the latest version in `CHANGELOG.md`
+- Keep entries short and grouped (Added/Changed/Fixed)
